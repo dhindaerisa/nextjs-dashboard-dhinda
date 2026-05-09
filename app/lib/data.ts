@@ -9,12 +9,18 @@ import {
 } from './definitions';
 import { formatCurrency } from './utils';
 
-// ✅ INI YANG DIPERBAIKI (POSTGRES_URL → DATABASE_URL)
-const sql = postgres(process.env.DATABASE_URL!, { ssl: 'require' });
+const sql = postgres(process.env.POSTGRES_URL!, { ssl: 'require' });
 
 export async function fetchRevenue() {
   try {
+
+    console.log('Fetching revenue data...');
+    await new Promise((resolve) => setTimeout(resolve, 300));
+
     const data = await sql<Revenue[]>`SELECT * FROM revenue`;
+
+    console.log('Data fetch completed after 3 seconds.');
+
     return data;
   } catch (error) {
     console.error('Database Error:', error);
@@ -44,6 +50,9 @@ export async function fetchLatestInvoices() {
 
 export async function fetchCardData() {
   try {
+    // You can probably combine these into a single SQL query
+    // However, we are intentionally splitting them to demonstrate
+    // how to initialize multiple queries in parallel with JS.
     const invoiceCountPromise = sql`SELECT COUNT(*) FROM invoices`;
     const customerCountPromise = sql`SELECT COUNT(*) FROM customers`;
     const invoiceStatusPromise = sql`SELECT
@@ -75,7 +84,6 @@ export async function fetchCardData() {
 }
 
 const ITEMS_PER_PAGE = 6;
-
 export async function fetchFilteredInvoices(
   query: string,
   currentPage: number,
@@ -146,6 +154,7 @@ export async function fetchInvoiceById(id: string) {
 
     const invoice = data.map((invoice) => ({
       ...invoice,
+      // Convert amount from cents to dollars
       amount: invoice.amount / 100,
     }));
 
